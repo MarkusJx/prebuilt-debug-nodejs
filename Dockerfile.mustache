@@ -1,0 +1,26 @@
+FROM debian:{{ VERSION }} as build
+RUN export DEBIAN_FRONTEND=noninteractive; \
+    export DEBCONF_NONINTERACTIVE_SEEN=true; \
+    apt-get update && apt-get -y upgrade && \
+    apt-get install -y clang git build-essential curl
+WORKDIR /app
+RUN git clone https://github.com/nodejs/node -b v{{ NODE_VERSION }}
+WORKDIR /app/node
+
+RUN CC=$(which clang) CXX=$(which clang++) ./configure --debug --enable-asan
+RUN CC=$(which clang) CXX=$(which clang++) make -j18
+
+RUN mkdir -p /nodejs/node && mv /app/node/out/Debug/node /nodejs/node/node && \
+    curl -qL https://www.npmjs.com/install.sh | \
+    PATH="$PATH:/nodejs/node" sh && \
+    mv /nodejs/bin /nodejs/npm
+ENV PATH="$PATH:/nodejs/node:/nodejs/npm"
+RUN node --version
+RUN npm --version
+
+FROM debian:{{ VERSION }}-slim
+
+COPY --from=build /nodejs /nodejs
+ENV PATH="$PATH:/nodejs/node:/nodejs/npm"
+
+CMD [ "/bin/bash" ]

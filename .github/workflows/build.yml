@@ -1,0 +1,61 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Node version to build'
+        required: true
+      debian-version:
+        description: 'Debian version'
+        required: true
+      set-latest:
+        description: 'Set as latest image'
+        required: false
+        type: boolean
+        default: 'false'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: debug-openjdk
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create dockerfile
+        uses: edgardleal/mustache-template-action@v1.0.4
+        env:
+          VERSION: ${{github.event.inputs.debian-version}}
+          NODE_VERSION: ${{github.event.inputs.version}}
+        with:
+          input: Dockerfile.mustache
+          output: Dockerfile
+
+      - name: Build image
+        run: docker build . --file Dockerfile --tag $IMAGE_NAME
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+      - name: Push image
+        run: |
+          IMAGE_ID=$REGISTRY/${{ github.repository }}
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          NODE_VERSION=${{github.event.inputs.version}}
+          IMAGE_VERSION=$NODE_VERSION-${{github.event.inputs.debian-version}}
+          docker tag $IMAGE_NAME $IMAGE_ID:$IMAGE_VERSION
+          docker push $IMAGE_ID:$IMAGE_VERSION
+      - name: Push latest image
+        if: ${{github.event.inputs.set-latest == 'true'}}
+        run: |
+          IMAGE_ID=$REGISTRY/${{ github.repository }}
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          docker tag $IMAGE_NAME $IMAGE_ID:latest
+          docker push $IMAGE_ID:latest
