@@ -7,7 +7,7 @@ WORKDIR /app
 RUN git clone https://github.com/nodejs/node -b v{{ NODE_VERSION }}
 WORKDIR /app/node
 
-{{#if eq(DEBUG, 'true')}}
+{{#if (eq DEBUG 'true')}}
 RUN CC=$(which clang) CXX=$(which clang++) ./configure --debug --enable-asan
 {{else}}
 RUN CC=$(which clang) CXX=$(which clang++) ./configure --enable-asan
@@ -16,7 +16,7 @@ RUN CC=$(which clang) CXX=$(which clang++) ./configure --enable-asan
 RUN CC=$(which clang) CXX=$(which clang++) make -j2
 
 RUN mkdir -p /nodejs/node
-{{#if eq(DEBUG, 'true')}}
+{{#if (eq DEBUG 'true')}}
 RUN mv /app/node/out/Debug/node /nodejs/node/node
 {{else}}
 RUN mv /app/node/out/Release/node /nodejs/node/node
