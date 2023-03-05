@@ -22,7 +22,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: debug-openjdk
+  IMAGE_NAME: node-asan
 
 jobs:
   build:
