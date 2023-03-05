@@ -9,6 +9,11 @@ on:
       debian-version:
         description: 'Debian version'
         required: true
+      build-debug:
+        description: 'Build debug image'
+        required: false
+        type: boolean
+        default: 'false'
       set-latest:
         description: 'Set as latest image'
         required: false
@@ -34,6 +39,7 @@ jobs:
         env:
           VERSION: ${{github.event.inputs.debian-version}}
           NODE_VERSION: ${{github.event.inputs.version}}
+          DEBUG: ${{github.event.inputs.build-debug == 'true'}}
         with:
           input: Dockerfile.mustache
           output: Dockerfile
@@ -43,13 +49,16 @@ jobs:
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+      - name: Set debug tag
+        if: ${{github.event.inputs.build-debug == 'true'}}
+        run: echo "DEBUG=-debug" >> $GITHUB_ENV
       - name: Push image
         run: |
           IMAGE_ID=$REGISTRY/${{ github.repository }}
           # Change all uppercase to lowercase
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
           NODE_VERSION=${{github.event.inputs.version}}
-          IMAGE_VERSION=$NODE_VERSION-${{github.event.inputs.debian-version}}
+          IMAGE_VERSION=$NODE_VERSION-${{github.event.inputs.debian-version}}${{env.DEBUG}}
           docker tag $IMAGE_NAME $IMAGE_ID:$IMAGE_VERSION
           docker push $IMAGE_ID:$IMAGE_VERSION
       - name: Push latest image

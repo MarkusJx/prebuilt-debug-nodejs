@@ -7,11 +7,24 @@ WORKDIR /app
 RUN git clone https://github.com/nodejs/node -b v{{ NODE_VERSION }}
 WORKDIR /app/node
 
-RUN CC=$(which clang) CXX=$(which clang++) ./configure --debug --enable-asan
+RUN CC=$(which clang) CXX=$(which clang++) ./configure \
+{{#DEBUG}}
+    --debug \
+{{/DEBUG}}
+{{^DEBUG}}
+    \
+{{/DEBUG}}
+    --enable-asan
 RUN CC=$(which clang) CXX=$(which clang++) make -j2
 
-RUN mkdir -p /nodejs/node && mv /app/node/out/Debug/node /nodejs/node/node && \
-    curl -qL https://www.npmjs.com/install.sh | \
+RUN mkdir -p /nodejs/node
+{{#DEBUG}}
+RUN mv /app/node/out/Debug/node /nodejs/node/node
+{{/DEBUG}}
+{{^DEBUG}}
+RUN mv /app/node/out/Release/node /nodejs/node/node
+{{/DEBUG}}
+RUN curl -qL https://www.npmjs.com/install.sh | \
     PATH="$PATH:/nodejs/node" sh && \
     mv /nodejs/bin /nodejs/npm
 ENV PATH="$PATH:/nodejs/node:/nodejs/npm"
@@ -20,6 +33,7 @@ RUN npm --version
 
 FROM debian:{{ VERSION }}-slim
 
+RUN apt-get update && apt-get install -y libatomic1
 COPY --from=build /nodejs /nodejs
 ENV PATH="$PATH:/nodejs/node:/nodejs/npm"
 
