@@ -39,7 +39,7 @@ jobs:
         env:
           VERSION: ${{github.event.inputs.debian-version}}
           NODE_VERSION: ${{github.event.inputs.version}}
-          DEBUG: ${{github.event.inputs.build-debug == 'true'}}
+          DEBUG: ${{github.event.inputs.build-debug}}
         with:
           input: Dockerfile.mustache
           output: Dockerfile

@@ -8,22 +8,20 @@ RUN git clone https://github.com/nodejs/node -b v{{ NODE_VERSION }}
 WORKDIR /app/node
 
 RUN CC=$(which clang) CXX=$(which clang++) ./configure \
-{{#DEBUG}}
+{{#if eq(DEBUG, 'true')}}
     --debug \
-{{/DEBUG}}
-{{^DEBUG}}
+{{else}}
     \
-{{/DEBUG}}
+{{/if}}
     --enable-asan
 RUN CC=$(which clang) CXX=$(which clang++) make -j2
 
 RUN mkdir -p /nodejs/node
-{{#DEBUG}}
+{{#if eq(DEBUG, 'true')}}
 RUN mv /app/node/out/Debug/node /nodejs/node/node
-{{/DEBUG}}
-{{^DEBUG}}
+{{else}}
 RUN mv /app/node/out/Release/node /nodejs/node/node
-{{/DEBUG}}
+{{/if}}
 RUN curl -qL https://www.npmjs.com/install.sh | \
     PATH="$PATH:/nodejs/node" sh && \
     mv /nodejs/bin /nodejs/npm
