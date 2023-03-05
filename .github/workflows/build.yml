@@ -41,7 +41,7 @@ jobs:
           NODE_VERSION: ${{github.event.inputs.version}}
           DEBUG: ${{github.event.inputs.build-debug}}
         with:
-          input: Dockerfile.mustache
+          input: Dockerfile-template.hbs
           output: Dockerfile
 
       - name: Build image
