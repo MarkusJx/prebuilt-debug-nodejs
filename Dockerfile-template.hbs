@@ -7,6 +7,10 @@ WORKDIR /app
 RUN git clone https://github.com/nodejs/node -b v{{ NODE_VERSION }}
 WORKDIR /app/node
 
+{{#if (eq NO_DETECT_LEAKS 'true')}}
+ENV ASAN_OPTIONS=detect_leaks=0
+{{/if}}
+
 {{#if (eq DEBUG 'true')}}
 RUN CC=$(which clang) CXX=$(which clang++) ./configure --debug --enable-asan
 {{else}}
