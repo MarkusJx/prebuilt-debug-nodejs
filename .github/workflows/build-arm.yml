@@ -1,0 +1,61 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Node version to build'
+        required: true
+      debian-version:
+        description: 'Debian version'
+        required: true
+      build-debug:
+        description: 'Build debug image'
+        required: false
+        type: boolean
+        default: 'false'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: node-asan
+
+jobs:
+  build:
+    runs-on: macos-14
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create dockerfile
+        uses: edgardleal/mustache-template-action@v1.0.4
+        env:
+          VERSION: ${{github.event.inputs.debian-version}}
+          NODE_VERSION: ${{github.event.inputs.version}}
+          DEBUG: ${{github.event.inputs.build-debug}}
+        with:
+          input: Dockerfile-template.hbs
+          output: Dockerfile
+
+      - name: Build image
+        run: docker build . --file Dockerfile --tag $IMAGE_NAME
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+      - name: Set debug tag
+        if: ${{github.event.inputs.build-debug == 'true'}}
+        run: echo "TAG=debug" >> $GITHUB_ENV
+      - name: Set release tag
+        if: ${{github.event.inputs.build-debug == 'false'}}
+        run: echo "TAG=release" >> $GITHUB_ENV
+      - name: Push image
+        run: |
+          IMAGE_ID=$REGISTRY/${{ github.repository }}
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          NODE_VERSION=${{github.event.inputs.version}}
+          IMAGE_VERSION=$NODE_VERSION-${{github.event.inputs.debian-version}}-${{env.TAG}}-arm64
+          docker tag $IMAGE_NAME $IMAGE_ID:$IMAGE_VERSION
+          docker push $IMAGE_ID:$IMAGE_VERSION
