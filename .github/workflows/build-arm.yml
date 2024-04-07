@@ -35,6 +35,7 @@ jobs:
           VERSION: ${{github.event.inputs.debian-version}}
           NODE_VERSION: ${{github.event.inputs.version}}
           DEBUG: ${{github.event.inputs.build-debug}}
+          NO_DETECT_LEAKS: 'true'
         with:
           input: Dockerfile-template.hbs
           output: Dockerfile
