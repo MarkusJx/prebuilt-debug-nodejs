@@ -17,7 +17,7 @@ RUN CC=$(which clang) CXX=$(which clang++) ./configure --debug --enable-asan
 RUN CC=$(which clang) CXX=$(which clang++) ./configure --enable-asan
 {{/if}}
     
-RUN CC=$(which clang) CXX=$(which clang++) make -j2
+RUN CC=$(which clang) CXX=$(which clang++) make -j3
 
 RUN mkdir -p /nodejs/node
 {{#if (eq DEBUG 'true')}}
