@@ -21,7 +21,7 @@ env:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -39,19 +39,8 @@ jobs:
           input: Dockerfile-template.hbs
           output: Dockerfile
 
-      - name: Install docker
-        run: brew install --cask docker
-      - name: Start Docker
-        run: |
-          # Start Docker.app if not already running
-          if ! pgrep -f Docker.app; then
-            open -a /Applications/Docker.app
-            # Wait for Docker to be ready
-            while ! docker info >/dev/null 2>&1; do sleep 1; done
-          fi
-
       - name: Build image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME
+        run: docker buildx build --platform=linux/arm64 --file Dockerfile --tag $IMAGE_NAME .
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
